@@ -15,8 +15,6 @@ contract NotAPyramidScheme {
     mapping(address => Node) public nodes;
     mapping(address => uint256) public unclaimedRewards;
 
-    uint256 rewardRatio = 5;
-
     constructor(uint256 donation) {
         rootNode = Node(msg.sender, address(0), donation, donation);
         totalNodes = 1;
@@ -33,7 +31,6 @@ contract NotAPyramidScheme {
     function getBalance() external view returns (uint256) {
         return address(this).balance;
     }
-
 
     // TODO: add some whitelisting functionality that only allows people to contribute if the "parent" allowed them to. 
     // Otherwise everyone will just create a node under root and avoid paying fees up the the branch. 
@@ -96,4 +93,7 @@ contract NotAPyramidScheme {
         // approaches infinity (geometric progression). So should theoretically never be 0.
         unclaimedRewards[currentNode.nodeAddress] += totalRewardRemaining;
     }
+
+
+    // TODO: without a withdraw or something all the treasury funds are currently just being sent to a block hole. 
 }
