@@ -5,39 +5,45 @@ const { solidity } = require("ethereum-waffle");
 use(solidity);
 
 describe("My Dapp", function () {
-  let myContract;
-
+  let yieldBucketContract;
+  let exampleNft;
+  let nfToken1;
+  let pyramid;
   // quick fix to let gas reporter fetch data from gas station & coinmarketcap
-  before((done) => {
-    setTimeout(done, 2000);
+  // before(async (done) => {
+  //   setTimeout(done, 2000);
+  // });
+
+  beforeEach(async () => {
+    console.log("beforeAll");
+    const YieldBucket = await ethers.getContractFactory("NFTYieldBucket");
+    const nftExample = await ethers.getContractFactory("ExampleNFT");
+    exampleNft = await nftExample.deploy();
+    yieldBucketContract = await YieldBucket.deploy();
+
+    nfToken1 = await exampleNft.mint();
+    await exampleNft.approve(yieldBucketContract.address, 0);
+
+
+    // deploy the pyramid scheme 
+    const pyramidDAO = await ethers.getContractFactory("NotAPyramidScheme");
+    pyramid = await pyramidDAO.deploy(10);
+
   });
 
   describe("YourContract", function () {
-    it("Should deploy YourContract", async function () {
-      const YourContract = await ethers.getContractFactory("YourContract");
+    it("addNft()", async function () {
+      const result = await yieldBucketContract.addNFTToBucket(
+        0,
+        exampleNft.address,
+        123
+      );
+      const timestampOffAdd = await yieldBucketContract.nftAddedTimestamp(
+        exampleNft.address,
+        0
+      );
 
-      myContract = await YourContract.deploy();
-    });
-
-    describe("setPurpose()", function () {
-      it("Should be able to set a new purpose", async function () {
-        const newPurpose = "Test Purpose";
-
-        await myContract.setPurpose(newPurpose);
-        expect(await myContract.purpose()).to.equal(newPurpose);
-      });
-
-      // Uncomment the event and emit lines in YourContract.sol to make this test pass
-
-      /*it("Should emit a SetPurpose event ", async function () {
-        const [owner] = await ethers.getSigners();
-
-        const newPurpose = "Another Test Purpose";
-
-        expect(await myContract.setPurpose(newPurpose)).to.
-          emit(myContract, "SetPurpose").
-            withArgs(owner.address, newPurpose);
-      });*/
+      console.log(timestampOffAdd.toString());
     });
   });
 });

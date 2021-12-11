@@ -285,7 +285,7 @@ function App(props) {
             */}
 
           <Contract
-            name="YourContract"
+            name="NotAPyramidScheme"
             price={price}
             signer={userSigner}
             provider={localProvider}
