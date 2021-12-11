@@ -80,9 +80,11 @@ contract NotAPyramidScheme {
             address addressToReward = currentNode.nodeAddress;  
             // reward size should follow the geometric progression
             // this means that if the tree has ingfinite height that the sum of the rewards still would not
-            // breach the total reward size
+            // breach the total reward size. Div by 2 is SUM(k/n^2). 
             uint256 maxAmountToReward = (totalRewardRemaining / 2);
             // what percentage of the branch do you own, some weird math to deal w integer division
+            // not sure if i love this mechanic. rewarding agaist proportional branch owenership gives whales power to ruin things in the branch
+            // but without this people can make near 0 donations and still earn rewards.
             uint256 amountToReward = maxAmountToReward /
                 (totalBranchValue / currentNode.donationSize);
             totalRewardRemaining -= amountToReward;
@@ -90,7 +92,7 @@ contract NotAPyramidScheme {
         }
 
         // any unclained reward spill into the root node, this value approaches 0 as the height of the tree 
-        // approaches infinity (geometric progression). So should theoretically never be 0.
+        // approaches infinity. So should theoretically never be 0. integer math might make it 0
         unclaimedRewards[currentNode.nodeAddress] += totalRewardRemaining;
     }
 
