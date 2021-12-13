@@ -23,6 +23,7 @@ export default function Events({ contracts, contractName, eventName, localProvid
   // 📟 Listen for broadcast events
   const events = useEventListener(contracts, contractName, eventName, localProvider, startBlock);
 
+  console.log(events)
   return (
     <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
       <h2>Events:</h2>
