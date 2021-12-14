@@ -31,38 +31,87 @@ describe("My Dapp", function () {
 
   describe("test full scheme", async () => {
     // assume the contract has already been deployed, check on the root node
+    it("should not allow 0 donation", async () => {
+      const [user1, user2] = await ethers.getSigners();
+      const treasuryBalanceAtStart = await pyramid.treasuryBalance();
+      try {
+        await pyramid.connect(user2).contribute(user1.address, { value: 0 });
+      } catch (error) {
+        expect(error.message).to.include("You must contribute at least 1 wei");
+      }
+      const treasuryBalanceAfterContribution = await pyramid.treasuryBalance();
+      expect(treasuryBalanceAfterContribution).to.equal(treasuryBalanceAtStart);
+    });
+    it("should not allow passing self as parent", async () => {
+      const [, user2] = await ethers.getSigners();
+      const treasuryBalanceAtStart = await pyramid.treasuryBalance();
+      try {
+        await pyramid.connect(user2).contribute(user2.address, { value: 100 });
+      } catch (error) {
+        expect(error.message).to.include("Parent node does not exist");
+      }
+      const treasuryBalanceAfterContribution = await pyramid.treasuryBalance();
+      expect(treasuryBalanceAfterContribution).to.equal(treasuryBalanceAtStart);
+    });
+    it("should not allow passing invalid parent", async () => {
+      const [, user2, user3] = await ethers.getSigners();
+      const treasuryBalanceAtStart = await pyramid.treasuryBalance();
+      try {
+        await pyramid.connect(user2).contribute(user3.address, { value: 100 });
+      } catch (error) {
+        expect(error.message).to.include("Parent node does not exist");
+      }
+      const treasuryBalanceAfterContribution = await pyramid.treasuryBalance();
+      expect(treasuryBalanceAfterContribution).to.equal(treasuryBalanceAtStart);
+    });
     it("contribute down the branch", async () => {
       const [user1, user2, user3, user4] = await ethers.getSigners();
       const treasuryBalanceAtStart = await pyramid.treasuryBalance();
-      console.log(user2.address + " contributes 100 under: " + user1.address);
       await pyramid.connect(user2).contribute(user1.address, { value: 100 });
-      console.log(user3.address + " contributes 100 under: " + user2.address);
-      await pyramid.connect(user3).contribute(user2.address, { value: 1000 });
-      console.log(user4.address + " contributes 100 under: " + user3.address);
+      await pyramid.connect(user3).contribute(user2.address, { value: 100 });
       await pyramid.connect(user4).contribute(user3.address, { value: 100 });
       const treasuryBalanceAfterContribution = await pyramid.treasuryBalance();
-      console.log(treasuryBalanceAtStart.toString());
-      console.log(treasuryBalanceAfterContribution.toString());
-      console.log(
-        user1.address +
-          " has " +
-          (await pyramid.unclaimedRewards(user1.address))
+      // expect the treasury to hold at least half of all the donations made
+      expect(
+        treasuryBalanceAfterContribution.toNumber()
+      ).to.be.greaterThanOrEqual(
+        treasuryBalanceAtStart.toNumber() + 50 + 50 + 50
       );
-      console.log(
-        user2.address +
-          " has " +
-          (await pyramid.unclaimedRewards(user2.address))
+      const user1UnclaimedRewards = await pyramid.unclaimedRewards(
+        user1.address
       );
-      console.log(
-        user3.address +
-          " has " +
-          (await pyramid.unclaimedRewards(user3.address))
+      const user2UnclaimedRewards = await pyramid.unclaimedRewards(
+        user2.address
       );
-      console.log(
-        user4.address +
-          " has " +
-          (await pyramid.unclaimedRewards(user4.address))
+      const user3UnclaimedRewards = await pyramid.unclaimedRewards(
+        user3.address
       );
+      const user4UnclaimedRewards = await pyramid.unclaimedRewards(
+        user4.address
+      );
+      // expect the users higher up in the tree to have more rewards
+      expect(user1UnclaimedRewards.toNumber()).to.be.greaterThan(
+        user2UnclaimedRewards.toNumber()
+      );
+      expect(user2UnclaimedRewards.toNumber()).to.be.greaterThan(
+        user3UnclaimedRewards.toNumber()
+      );
+      expect(user3UnclaimedRewards.toNumber()).to.be.greaterThan(
+        user4UnclaimedRewards.toNumber()
+      );
+    });
+    it("find limit of tree height", async () => {
+      const addresses = await ethers.getSigners();
+      let currentUserIndex = 1;
+      let previousUser = 0;
+      while (true) {
+        // console.log(addresses.map(address))
+        let gasUsage = await pyramid.connect(addresses[currentUserIndex]).estimateGas.contribute(addresses[previousUser].address, { value: 100 });
+        await pyramid.connect(addresses[currentUserIndex]).contribute(addresses[previousUser].address, { value: 100 });
+        console.log(gasUsage.toNumber());
+        currentUserIndex++;
+        previousUser++;
+      }
     });
   });
   // describe("YourContract", function () {

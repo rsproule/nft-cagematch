@@ -153,14 +153,14 @@ export default function ExampleUI({
         📑 Maybe display a list of events?
           (uncomment the event and emit line in YourContract.sol! )
       */}
-      <Events
+      {/* <Events
         contracts={readContracts}
         contractName="NotAPyramidScheme"
         eventName="IncreaseReward"
         localProvider={localProvider}
         mainnetProvider={mainnetProvider}
         startBlock={1}
-      />
+      /> */}
 
       <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 256 }}>
         <Card>

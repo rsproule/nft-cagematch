@@ -1,33 +1,52 @@
-import { BigInt, Address } from "@graphprotocol/graph-ts";
+import { BigInt, Address, TypedMap, TypedMapEntry } from "@graphprotocol/graph-ts"
+
 import {
-  YourContract,
-  SetPurpose,
-} from "../generated/YourContract/YourContract";
-import { Purpose, Sender } from "../generated/schema";
+  Contribute,
+  IncreaseReward
+} from "../generated/NotAPyramidScheme/NotAPyramidScheme";
+import { Node, Sender } from "../generated/schema";
 
-export function handleSetPurpose(event: SetPurpose): void {
-  let senderString = event.params.sender.toHexString();
-
+export function handleContribute(event: Contribute) : void{
+  const senderString: string = event.params.contributor.toHexString();
   let sender = Sender.load(senderString);
+  const donationAmount = event.params.amount
+  const parentAddress = event.params.parent;
 
-  if (sender === null) {
+  if (sender == null) {
     sender = new Sender(senderString);
-    sender.address = event.params.sender;
+    sender.address = event.params.contributor;
     sender.createdAt = event.block.timestamp;
-    sender.purposeCount = BigInt.fromI32(1);
-  } else {
-    sender.purposeCount = sender.purposeCount.plus(BigInt.fromI32(1));
+
+
+    // sender.tileUpdates 
+    // sender.min
   }
 
-  let purpose = new Purpose(
-    event.transaction.hash.toHex() + "-" + event.logIndex.toString()
-  );
+  let node: Node = new Node(sender.id);
 
-  purpose.purpose = event.params.purpose;
-  purpose.sender = senderString;
-  purpose.createdAt = event.block.timestamp;
-  purpose.transactionHash = event.transaction.hash.toHex();
-
-  purpose.save();
+  node.donationAmount = donationAmount;
+  node.parentNodeAddress = parentAddress;
+  node.cumualativeDonationAmount = BigInt.fromI32(0);
+  node.unclaimedRewardAmount = BigInt.fromI32(0);
+  node.totalRewardAmount = BigInt.fromI32(0);
+  
   sender.save();
+  node.save();
+  
+}
+
+export function handleIncreaseReward(event: IncreaseReward) :void{
+  const nodeString: string = event.params.nodeAddress.toHexString();
+  let node = Node.load(nodeString);
+
+  if  (node == null) {
+    node = new Node(nodeString);  
+  }
+  node.unclaimedRewardAmount = node.unclaimedRewardAmount.plus(event.params.amount);
+  node.totalRewardAmount = node.totalRewardAmount.plus(event.params.amount);
+  // const rewardAmount = event.params.rewardAmount
+
+  // do some stuff
+  // load the node probably and increase the rewards
+  node.save()
 }

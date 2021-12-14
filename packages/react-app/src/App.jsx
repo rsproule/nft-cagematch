@@ -31,6 +31,7 @@ import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
 import { Home, ExampleUI, Hints, Subgraph } from "./views";
 import { useStaticJsonRPC } from "./hooks";
+import TreeViz from "./components/TreeViz";
 
 const { ethers } = require("ethers");
 /*
@@ -270,6 +271,9 @@ function App(props) {
         <Menu.Item key="/subgraph">
           <Link to="/subgraph">Subgraph</Link>
         </Menu.Item>
+        <Menu.Item key="/treeviz">
+          <Link to="/treeviz">Tree Viz</Link>
+        </Menu.Item>
       </Menu>
 
       <Switch>
@@ -345,6 +349,9 @@ function App(props) {
             writeContracts={writeContracts}
             mainnetProvider={mainnetProvider}
           />
+        </Route>
+        <Route path="/treeviz">
+          <TreeViz pyramidContract={readContracts.NotAPyramidScheme}/>
         </Route>
       </Switch>
 

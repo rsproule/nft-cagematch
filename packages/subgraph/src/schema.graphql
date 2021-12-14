@@ -1,15 +1,18 @@
-type Purpose @entity {
-  id: ID!
-  sender: Sender!
-  purpose: String!
-  createdAt: BigInt!
-  transactionHash: String!
-}
-
 type Sender @entity {
   id: ID!
   address: Bytes!
-  purposes: [Purpose!] @derivedFrom(field: "sender")
+  nodes: [Node!] @derivedFrom(field: "sender")
   createdAt: BigInt!
   purposeCount: BigInt!
+}
+
+type Node @entity {
+  id: ID!
+  sender: Sender!
+  parentNodeAddress: Bytes!
+  donationAmount: BigInt!
+  cumualativeDonationAmount: BigInt!
+  createdAt: BigInt!
+  totalRewardAmount: BigInt!
+  unclaimedRewardAmount: BigInt!
 }

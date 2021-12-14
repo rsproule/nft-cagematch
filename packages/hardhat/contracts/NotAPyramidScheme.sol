@@ -1,7 +1,8 @@
 pragma solidity >=0.8.0 <0.9.0;
-import "hardhat/console.sol";
 
-contract NotAPyramidScheme {
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract NotAPyramidScheme is Ownable {
     struct Node {
         address nodeAddress;
         address parentAddress;
@@ -26,6 +27,7 @@ contract NotAPyramidScheme {
         totalNodes = 1;
         nodes[msg.sender] = rootNode;
         treasuryBalance = donation;
+        emit Contribute(msg.sender, address(0), donation);
     }
 
     // Function to receive Ether. msg.data must be empty
@@ -45,6 +47,11 @@ contract NotAPyramidScheme {
             nodes[msg.sender].nodeAddress == address(0),
             "You have already contributed"
         );
+        require(
+            nodes[parent].nodeAddress != address(0),
+            "Parent node does not exist"
+        );
+        require(msg.value > 0, "You must contribute at least 1 wei");
         uint256 amount = msg.value;
 
         Node memory parentNode = nodes[parent];
@@ -59,12 +66,13 @@ contract NotAPyramidScheme {
 
         // send the chunk of the donation that doesnt need to reward the branch
         uint256 donationSize = amount / 2; // amount - (amount / rewardRatio);
-        (bool sent, bytes memory data) = address(this).call{value: msg.value}(
-            ""
-        );
+        // (bool sent, bytes memory data) = address(this).call{value: msg.value}(
+        //     ""
+        // );
         treasuryBalance += donationSize;
         totalNodes += 1;
         rewardAllLevelsTillRootIteratively(newNode, donationSize);
+        emit Contribute(msg.sender, parent, amount);
     }
 
     function claimRewards(address rewardee) public payable {
@@ -93,7 +101,6 @@ contract NotAPyramidScheme {
             totalRewardRemaining,
             currentNode.nodeHeight
         );
-        console.log("Total spill:", spillOver);
         uint spillPaid = 0;
         while (currentNode.parentAddress != address(0)) {
             currentNode = nodes[currentNode.parentAddress];
@@ -102,17 +109,11 @@ contract NotAPyramidScheme {
             // this means that if the tree has ingfinite height that the sum of the rewards still would not
             // breach the total reward size. Div by 2 is SUM(k/n^2).
             uint256 baseReward = (totalRewardRemaining / 2);
-            // what percentage of the branch do you own, some weird math to deal w integer division
-            // not sure if i love this mechanic. rewarding agaist proportional branch owenership gives whales power to ruin things in the branch
-            // but without this people can make near 0 donations and still earn rewards.
+            // The spill is from the fact that only an infitinely tall tree can consume the entire
+            // reward. So each node in the branch get a portion of this spill based on the percntage
+            // of the branch they own. 
             uint256 amountToReward = baseReward +
                 (spillOver / (totalBranchValue / currentNode.donationSize));
-            console.log("-------");
-            console.log("Node address: ", addressToReward);
-            console.log("baseReward", baseReward);
-            console.log("spillover share", spillOver / (totalBranchValue / currentNode.donationSize));
-            console.log("-------");
-
             totalRewardRemaining -= baseReward;
             unclaimedRewards[addressToReward] += amountToReward;
             emit IncreaseReward(addressToReward, amountToReward);
@@ -135,5 +136,10 @@ contract NotAPyramidScheme {
         return rewardTotal / (2**height);
     }
 
-    // TODO: without a withdraw or something all the treasury funds are currently just being sent to a block hole.
+    // probable more interesting if this treasury is managed by governence
+    function withdrawTreasury(uint amountToWithdraw) public onlyOwner {
+        treasuryBalance -= amountToWithdraw;
+        payable(msg.sender).transfer(amountToWithdraw);
+    }
+    
 }
