@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
@@ -107,8 +108,9 @@ describe("My Dapp", function () {
       while (true) {
         // console.log(addresses.map(address))
         let gasUsage = await pyramid.connect(addresses[currentUserIndex]).estimateGas.contribute(addresses[previousUser].address, { value: 100 });
-        await pyramid.connect(addresses[currentUserIndex]).contribute(addresses[previousUser].address, { value: 100 });
+        await pyramid.connect(addresses[currentUserIndex]).contribute(addresses[previousUser].address, { value: ethers.utils.parseEther("1000") });
         console.log(gasUsage.toNumber());
+        // console.log(currentUserIndex)
         currentUserIndex++;
         previousUser++;
       }
@@ -130,3 +132,12 @@ describe("My Dapp", function () {
   //   });
   // });
 });
+function send(signer, txparams) {
+  return signer.sendTransaction(txparams, (error, transactionHash) => {
+    if (error) {
+      debug(`Error: ${error}`);
+    }
+    debug(`transactionHash: ${transactionHash}`);
+    // checkForReceipt(2, params, transactionHash, resolve)
+  });
+}

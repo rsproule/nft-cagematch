@@ -64,6 +64,11 @@ module.exports = {
   // Follow the directions, and uncomment the network you wish to deploy to.
 
   networks: {
+    hardhat: {
+      accounts: {
+        count: 1000,
+      },
+    },
     localhost: {
       url: "http://localhost:8545",
       /*      

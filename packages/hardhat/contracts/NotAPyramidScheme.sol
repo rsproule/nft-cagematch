@@ -1,5 +1,6 @@
 pragma solidity >=0.8.0 <0.9.0;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract NotAPyramidScheme is Ownable {
@@ -102,6 +103,7 @@ contract NotAPyramidScheme is Ownable {
             currentNode.nodeHeight
         );
         uint spillPaid = 0;
+        uint index = 0;
         while (currentNode.parentAddress != address(0)) {
             currentNode = nodes[currentNode.parentAddress];
             address addressToReward = currentNode.nodeAddress;
@@ -109,6 +111,12 @@ contract NotAPyramidScheme is Ownable {
             // this means that if the tree has ingfinite height that the sum of the rewards still would not
             // breach the total reward size. Div by 2 is SUM(k/n^2).
             uint256 baseReward = (totalRewardRemaining / 2);
+            // this optimization to break when reward is empty ends up being critical. 
+            // This caps the total number of iterations that this can go through at DonationSize/2^n. 
+            // which has an upperbound of 255 (would cost 2^256 ether) because of the size of uint256. 
+            if (baseReward < 1) {
+                break;
+            }
             // The spill is from the fact that only an infitinely tall tree can consume the entire
             // reward. So each node in the branch get a portion of this spill based on the percntage
             // of the branch they own. 
@@ -117,6 +125,7 @@ contract NotAPyramidScheme is Ownable {
             totalRewardRemaining -= baseReward;
             unclaimedRewards[addressToReward] += amountToReward;
             emit IncreaseReward(addressToReward, amountToReward);
+            index++;
         }
 
         nodes[initialNode].cumulativeBranchDonationSize += spillOver - spillPaid;
@@ -133,6 +142,10 @@ contract NotAPyramidScheme is Ownable {
         pure
         returns (uint256)
     {
+        // when height is 256, this will underflow. 
+        if (height >= 256) {
+            return 0;
+        }
         return rewardTotal / (2**height);
     }
 
