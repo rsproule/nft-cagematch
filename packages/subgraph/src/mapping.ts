@@ -9,7 +9,7 @@ import { Node, Sender } from "../generated/schema";
 export function handleContribute(event: Contribute) : void{
   const senderString: string = event.params.contributor.toHexString();
   let sender = Sender.load(senderString);
-  const donationAmount = event.params.amount
+  const donationAmount = event.params.donationSize
   const parentAddress = event.params.parent;
 
   if (sender == null) {
@@ -18,8 +18,6 @@ export function handleContribute(event: Contribute) : void{
     sender.createdAt = event.block.timestamp;
 
 
-    // sender.tileUpdates 
-    // sender.min
   }
 
   let node: Node = new Node(sender.id);
@@ -42,8 +40,8 @@ export function handleIncreaseReward(event: IncreaseReward) :void{
   if  (node == null) {
     node = new Node(nodeString);  
   }
-  node.unclaimedRewardAmount = node.unclaimedRewardAmount.plus(event.params.amount);
-  node.totalRewardAmount = node.totalRewardAmount.plus(event.params.amount);
+  node.unclaimedRewardAmount = node.unclaimedRewardAmount.plus(event.params.donationSize);
+  node.totalRewardAmount = node.totalRewardAmount.plus(event.params.donationSize);
   // const rewardAmount = event.params.rewardAmount
 
   // do some stuff

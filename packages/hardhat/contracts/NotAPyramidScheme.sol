@@ -10,6 +10,7 @@ contract NotAPyramidScheme is Ownable {
         uint256 donationSize;
         uint256 cumulativeBranchDonationSize;
         uint256 nodeHeight;
+        uint256 numChildren;
     }
 
     Node public rootNode;
@@ -24,7 +25,7 @@ contract NotAPyramidScheme is Ownable {
     event Contribute(address contributor, address parent, uint256 donationSize);
 
     constructor(uint256 donation) {
-        rootNode = Node(msg.sender, address(0), donation, donation, 0);
+        rootNode = Node(msg.sender, address(0), donation, donation, 0, 0);
         totalNodes = 1;
         nodes[msg.sender] = rootNode;
         treasuryBalance = donation;
@@ -56,12 +57,14 @@ contract NotAPyramidScheme is Ownable {
         uint256 donationSize = msg.value;
 
         Node memory parentNode = nodes[parent];
+        parentNode.numChildren++;
         Node memory newNode = Node(
             msg.sender,
             parent,
             donationSize,
             donationSize + parentNode.cumulativeBranchDonationSize,
-            parentNode.nodeHeight + 1
+            parentNode.nodeHeight + 1,
+            0
         );
         nodes[msg.sender] = newNode;
 
@@ -84,8 +87,6 @@ contract NotAPyramidScheme is Ownable {
         payable(msg.sender).transfer(donationSize);
     }
 
-    // This function scales poorly against the height of the tree O(n). Not aware of a better way to do this.
-    // just means the earlier you are, the less gas you will pay (pyramid scheme theme fits)
     function rewardAllLevelsTillRootIteratively(
         Node memory currentNode,
         uint256 totalRewardSize
